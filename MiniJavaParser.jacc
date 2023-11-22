@@ -1,0 +1,113 @@
+ %class MiniJavaParser
+ %interface miniJavaParserTokens
+ %semantic  int : yylval
+ %get       token
+ %next      yylex()
+ 
+ %token '*' '/' '+' '-' '(' ')' ';' INTEGER i  NEW INT THIS INTEGER_LITERAL LENGTH BOOLEAN FALSE RETURN TRUE EXPRESSION WHILE IF ELSE SYSTEM OUT PRINTLN EXTENDS IDENTIFIER CLASS PUBLIC STATIC VOID MAIN  STRING 
+ %left  '*' '/'
+ %left  '+' '-'
+ 
+ %%
+ 
+ 
+  Goal : MainClass '('ClassDeclaration ')'
+        ;
+  MainClass : CLASS Identifier '{' PUBLIC STATIC VOID MAIN '(' STRING '[' ']' Identifier ')' '{' Statement '}' '}'
+           ;
+  ClassDeclaration : CLASS Identifier '(' EXTENDS Identifier ')''?' '{' '(' VarDeclaration ')' '(' MethodDeclaration ')' '}'
+                  ;
+  VarDeclaration	:Type Identifier ';' 
+            ;
+  MethodDeclaration : PUBLIC  Type Identifier '(' '(' Type Identifier '(' ',' Type Identifier ')' ')''?' ')' '{' '(' VarDeclaration ')' '(' Statement ')' RETURN Expression ';' '}'
+                  ;
+ Type : INTEGER '[' ']'
+ |	BOOLEAN
+ |	INTEGER 'i'
+ |	Identifier;
+ Statement	:	'{' '(' Statement ')' '}'
+ |	IF '(' Expression ')' Statement ELSE Statement
+ |	WHILE '(' Expression ')' Statement
+ |	SYSTEM OUT PRINTLN '(' Expression ')' ';'
+ |	Identifier '=' Expression ';'
+ |	Identifier '[' Expression ']''=' Expression ';' 
+          ;
+ Expression : Expression '+' Expression	{ $$ = $1 + $3; }
+      | Expression '-' Expression	{ $$ = $1 - $3; }
+      | Expression '*' Expression	{ $$ = $1 * $3; }
+      | Expression '/' Expression	{ $$ = $1 / $3; }
+      | '(' Expression ')'     { $$ = $2; }
+      | INTEGER          { $$ = $1; }
+      ;
+ Identifier	:	IDENTIFIER ;
+ 
+ 
+ %%
+ 
+   private void yyerror(String msg) {
+     System.out.println("ERROR: " + msg);
+     System.exit(1);
+   }
+ 
+   private int c;
+ 
+   /** Read a single input character from standard input.
+    */
+   private void nextChar() {
+     if (c>=0) {
+       try {
+         c = System.in.read();
+       } catch (Exception e) {
+         c = (-1);
+       }
+     }
+   }
+ 
+   int token;
+   int yylval;
+ 
+   /** Read the next token and return the
+    *  corresponding integer code.
+    */
+   int yylex() {
+     for (;;) {
+       // Skip whitespace
+       while (c==' ' || c=='\n' || c=='\t' || c=='\r') {
+         nextChar();
+       }
+       if (c<0) {
+         return (token=ENDINPUT);
+       }
+       switch (c) {
+         case '+' : nextChar();
+                    return token='+';
+         case '-' : nextChar();
+                    return token='-';
+         case '*' : nextChar();
+                    return token='*';
+         case '/' : nextChar();
+                    return token='/';
+         case '(' : nextChar();
+                    return token='(';
+         case ')' : nextChar();
+                    return token=')';
+         case ';' : nextChar();
+                    return token=';';
+         default  : if (Character.isDigit((char)c)) {
+                      int n = 0;
+                        do {
+                          n = 10*n + (c - '0');
+                          nextChar();
+                        } while (Character.isDigit((char)c));
+                        yylval = n;
+                        return token=INTEGER;
+                      } else {
+                        yyerror("Illegal character "+c);
+                        nextChar();
+                      }
+       }
+     }
+   }
+ 
+  %%
+  

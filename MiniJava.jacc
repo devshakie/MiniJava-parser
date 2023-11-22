@@ -1,0 +1,246 @@
+%class     MiniJava
+%interface MiniJavaTokens
+%semantic  int : yylval
+%get       token
+%next      yylex()
+%{
+  import java.util.*;
+  
+%}
+
+
+%token   ';' '{' '}' '(' ')' '[' ']' '=' WHILE INT BOOLEAN VOID ID CLASS '.' PUBLIC PRIVATE STATIC UNOP BINOP NUM RETURN IF ELSE TRUE FALSE THIS NEW 
+
+%%
+Program : ClassDeclarations ';' { System.out.println("great"); } ;
+
+ClassDeclarations:ClassDeclaration ClassDeclarations|ClassDeclaration;
+
+ClassDeclaration :
+CLASS ID '{'
+ InClassDeclarations
+'}'{ System.out.println("great"); };
+
+
+InClassDeclarations:InClassDeclaration InClassDeclarations|/*empty*/;
+
+InClassDeclaration:FieldDeclaration | MethodDeclaration;
+
+FieldDeclaration : Declarations';';
+
+MethodDeclaration :
+Declarations  '('ParameterList')' '{'
+ InnerMethodState
+'}';
+
+
+
+
+InnerMethodState: Statements Return|/*empty*/;
+
+Return:RETURN Expression ';'|/*empty*/;
+
+Declarations : Access Static TypeDec;
+
+Static:STATIC|/*empty*/;
+
+Access:PUBLIC | PRIVATE |/*empty*/ ;
+
+TypeDec : PrimType ID| ArrType ID |ID  ; 
+
+PrimType : INT | BOOLEAN | VOID  ;
+
+ArrType : Atype '['']' ;
+
+Atype: INT | ID ;
+
+ParameterList : TypeDec ',' ParameterList| TypeDec|/*empty*/;
+
+ArgumentList : Expression ',' ArgumentList|Expression;
+
+Reference : MainRef '.' IdList;
+
+MainRef:THIS  | ID ;
+
+IdList:ID '.' IdList| ID;
+
+Statements:Statement Statements|Statement;
+
+Statement :
+ TypeDec '=' Expression ';'
+| RefExpr '=' Expression ';'
+| RefArgs ';'
+| IF '(' Expression ')' Statement  ELSE Statement
+| WHILE '(' Expression ')' Statement
+
+;
+
+RefExpr:Reference '['Expression']';
+
+RefArgs:Reference '(' ArgumentList ')';
+
+
+
+Expression :
+ RefExpr
+| RefArgs
+| UNOP NUM
+| NUM BINOP NUM
+| NUM | TRUE | FALSE|ID
+| NEW NewStatements ';'
+|  /*empty*/
+;
+
+NewStatements: ID '['Expression']' | INT '['Expression']' |ID  '('')' ;
+
+%%
+ private void yyerror(String msg) {
+    System.out.println("ERROR: " + msg);
+    System.exit(1);
+  }
+
+  private int c;
+  private boolean prev=false;
+
+  /** Read a single input character from standard input.
+   */
+  private void nextChar() {
+    if (c>=0) {
+      try {
+        c = System.in.read();
+      } catch (Exception e) {
+        c = (-1);
+      }
+    }
+  }
+  private int checkIfKeyword(String a) {
+      
+      String check=a.toLowerCase();
+      int tempToken;
+      switch (check) {
+        case "while" : return tempToken=WHILE;
+        case "int" : return tempToken=INT;
+        case "boolean" : return tempToken=BOOLEAN;
+        case "void" : return tempToken=VOID;
+        case "class" :return tempToken=CLASS;
+        case "public" :return tempToken=PUBLIC;
+        case "private" : return tempToken=PRIVATE;
+        case "static" : return tempToken=STATIC;
+        case "if" : return tempToken=IF;           
+        case "else" : return tempToken=ELSE;           
+        case "true" : return tempToken=TRUE;           
+        case "false" : return tempToken=FALSE;           
+        case "this" : return tempToken=THIS;           
+        case "new" : return tempToken=NEW;           
+        case "return" : return tempToken=RETURN;           
+        default  : return tempToken=ID;
+  }}
+
+ int token;
+  int yylval;
+
+
+  /** Read the next token and return the
+   *  corresponding integer code.
+   */
+  int yylex() {
+    for (;;) {
+      // Skip whitespace
+      while (c==' ' || c=='\n' || c=='\t' || c=='\r') {
+        nextChar();
+      }
+      
+      if (c<0) {
+        return (token=ENDINPUT);
+      }
+      switch (c) {
+        case '+' : nextChar();
+                   if(prev){
+                    return token=UNOP;
+                   }else{
+                    prev=false;
+                    return token=BINOP; 
+                   }
+                   
+        case '-' : nextChar();
+                   if(prev){
+                    return token=UNOP;
+                   }else{
+                    prev=false;
+                    return token=BINOP; 
+                   }
+        case '*' : nextChar();
+                   if(prev){
+                    return token=UNOP;
+                   }else{
+                    prev=false;
+                    return token=BINOP; 
+                   }
+        case '/' : nextChar();
+                   if(prev){
+                    return token=UNOP;
+                   }else{
+                    prev=false;
+                    return token=BINOP; 
+                   }
+        case '(' : nextChar();
+                    prev=false;
+                   return token='(';
+        case ')' : nextChar();
+                   prev=false;
+                   return token=')';
+        case '{' : nextChar();
+                   prev=false;
+                   return token='{';
+        case '}' : nextChar();
+                   prev=false;
+                   return token='}';
+        case '[' : nextChar();
+                   prev=false;
+                   return token='[';
+        case ']' : nextChar();
+                   prev=false;
+                   return token=']';
+        case '.' : nextChar();
+                   prev=false;
+                   return token='.';
+        case ';' : nextChar();
+                   prev=false;
+                   return token=';';
+        case '=' : nextChar();
+                   prev=false;
+                   return token='=';
+        default  : if (Character.isDigit((char)c)) {
+                     int n = 0;
+                       do {
+                         n = 10*n + (c - '0');
+                         nextChar();
+                       } while (Character.isDigit((char)c));
+                       
+                       prev=false;
+                       return token=NUM;
+                     }else if (Character.isLetter((char)c)){
+                         char v;   
+                         String n = "";                      
+                         prev=false;                          
+                       do {
+                        v=(char)c;
+                         n = n+v;
+                         nextChar();
+                       } while (Character.isLetter((char)c)||Character.isDigit((char)c));
+                         return token=checkIfKeyword(n);
+
+                     } else {
+                       yyerror("Illegal character "+c);
+                       nextChar();
+                     }
+      }
+    }
+  }
+
+  public static void main(String[] args) {
+    MiniJava mini = new MiniJava();
+    mini.nextChar(); // prime the character input stream
+    mini.yylex();    // prime the token input stream
+    mini.parse();    // parse the input
+  }

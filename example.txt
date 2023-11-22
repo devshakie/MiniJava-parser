@@ -1,0 +1,2 @@
+class Apple {   public Apple() {  } public void getColor1() {  }public void getVitaminType() {  }}
+class Apple {public void Apple;public Apple(int h) {int face = 9; int face = 9; int face = 9;int face = 9; }  public void getColor1() {int loud=4; return loud; }}

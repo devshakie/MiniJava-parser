@@ -1,0 +1,162 @@
+// To compile and run this program using jacc and Sun's JDK:
+//
+//    jacc simpleCalc.jacc
+//    javac Calc.java CalcTokens.java
+//    java  Calc
+//     ... enter arithmetic expressions ... hit EOF to terminate
+//
+
+%class     myMiniJava
+%interface myMiniJavatokens
+%semantic  int : yylval
+%get       token
+%next      yylex()
+
+%token '+' '-' '*' '/' '(' ')' ';' INTEGER 'i' IDENTIFIER CLASS ELSE EXPRESSION EXTENDS FALSE BOOLEAN IF INT INTEGER_LITERAL LENGTH MAIN NEW OUT PRINTLN PUBLIC RETURN STATIC RETURN STATIC STRING SYSTEM THIS TRUE VOID WHILE
+%left  '+' '-'
+%left  '*' '/'
+
+%%
+expr : expr '+' expr	{ $$ = $1 + $3; }
+     | expr '-' expr	{ $$ = $1 - $3; }
+     | expr '*' expr	{ $$ = $1 * $3; }
+     | expr '/' expr	{ $$ = $1 / $3; }
+     | '(' expr ')'     { $$ = $2; }
+     | INTEGER          { $$ = $1; }
+     ;
+%%
+
+ Goal : MainClass '('ClassDeclaration ')'
+       ;
+ MainClass : CLASS Identifier '{' PUBLIC STATIC VOID MAIN '(' STRING '[' ']' Identifier ')' '{' Statement '}' '}'
+          ;
+ ClassDeclaration : CLASS Identifier '(' EXTENDS Identifier ')''?' '{' '(' VarDeclaration ')' '(' MethodDeclaration ')' '}'
+                 ;
+ VarDeclaration	:Type Identifier ';' 
+           ;
+ MethodDeclaration : PUBLIC  Type Identifier '(' '(' Type Identifier '(' ',' Type Identifier ')' ')''?' ')' '{' '(' VarDeclaration ')' '(' Statement ')' RETURN Expression ';' '}'
+                 ;
+Type : INTEGER '[' ']'
+|	BOOLEAN
+|	INTEGER 'i'
+|	Identifier;
+Statement : '{' '(' Statement ')' '}' 
+|	IF '(' Expression ')' Statement ELSE Statement
+|	WHILE '(' Expression ')' Statement
+|	SYSTEM OUT PRINTLN '(' Expression ')' ';'
+|	Identifier '=' Expression ';'
+|	Identifier '[' Expression ']''=' Expression ';' 
+         ;
+Expression : EXPRESSION '(' '&&' | '<' | '+' | '-' | '*' ')' 
+|	Expression '[' Expression ']'
+|	Expression '.' LENGTH
+|	Expression '.' Identifier '(' '(' Expression '(' ',' Expression ')' ')''?' ')'
+|	INTEGER_LITERAL
+|	TRUE
+|	FALSE
+|	Identifier
+|	THIS
+| NEW INT '[' Expression ']'
+|	NEW Identifier '(' ')'
+|	'!' Expression
+|	'(' Expression ')' 
+         ;
+Identifier	:	IDENTIFIER ;
+
+
+%%
+
+  private void yyerror(String msg) {
+    System.out.println("ERROR: " + msg);
+    System.exit(1);
+  }
+
+  private int c;
+
+  /** Read a single input character from standard input.
+   */
+  private void nextChar() {
+    if (c>=0) {
+      try {
+        c = System.in.read();
+      } catch (Exception e) {
+        c = (-1);
+      }
+    }
+  }
+
+
+
+%%
+
+  private void yyerror(String msg) {
+    System.out.println("ERROR: " + msg);
+    System.exit(1);
+  }
+
+  private int c;
+
+  /** Read a single input character from standard input.
+   */
+  private void nextChar() {
+    if (c>=0) {
+      try {
+        c = System.in.read();
+      } catch (Exception e) {
+        c = (-1);
+      }
+    }
+  }
+
+  int token;
+  int yylval;
+
+  /** Read the next token and return the
+   *  corresponding integer code.
+   */
+  int yylex() {
+    for (;;) {
+      // Skip whitespace
+      while (c==' ' || c=='\n' || c=='\t' || c=='\r') {
+        nextChar();
+      }
+      if (c<0) {
+        return (token=ENDINPUT);
+      }
+      switch (c) {
+        case '+' : nextChar();
+                   return token='+';
+        case '-' : nextChar();
+                   return token='-';
+        case '*' : nextChar();
+                   return token='*';
+        case '/' : nextChar();
+                   return token='/';
+        case '(' : nextChar();
+                   return token='(';
+        case ')' : nextChar();
+                   return token=')';
+        case ';' : nextChar();
+                   return token=';';
+        default  : if (Character.isDigit((char)c)) {
+                     int n = 0;
+                       do {
+                         n = 10*n + (c - '0');
+                         nextChar();
+                       } while (Character.isDigit((char)c));
+                       yylval = n;
+                       return token=INTEGER;
+                     } else {
+                       yyerror("Illegal character "+c);
+                       nextChar();
+                     }
+      }
+    }
+  }
+
+  public static void main(String[] args) {
+    Calc calc = new Calc();
+    calc.nextChar(); // prime the character input stream
+    calc.yylex();    // prime the token input stream
+    calc.parse();    // parse the input
+  }
